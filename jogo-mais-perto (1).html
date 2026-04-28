@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mais Perto · Um jogo de conexão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #1a0e14;
+    --bg-mid: #2a1620;
+    --bg-soft: #3a1f2c;
+    --cream: #f5e6d8;
+    --cream-dim: #d9c4b0;
+    --rose: #d4506b;
+    --rose-deep: #b03a55;
+    --gold: #e8b04a;
+    --gold-soft: #c89a3e;
+    --plum: #6b3a52;
+    --shadow: rgba(0,0,0,0.45);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background:
+      radial-gradient(ellipse at top, var(--bg-soft) 0%, var(--bg-mid) 40%, var(--bg-deep) 100%);
+    color: var(--cream);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.08;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+  }
+
+  .deco {
+    position: fixed;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.15;
+  }
+  .deco-1 {
+    top: 8%; left: 5%;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 180px;
+    color: var(--gold);
+    transform: rotate(-12deg);
+  }
+  .deco-2 {
+    bottom: 10%; right: 5%;
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 220px;
+    color: var(--rose);
+    transform: rotate(8deg);
+  }
+
+  .container {
+    width: 100%;
+    max-width: 460px;
+    z-index: 2;
+    position: relative;
+  }
+
+  .screen {
+    display: none;
+    animation: fadeIn 0.6s ease;
+  }
+  .screen.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .start-screen {
+    text-align: center;
+  }
+
+  .ornament {
+    font-family: 'Fraunces', serif;
+    color: var(--gold);
+    font-size: 24px;
+    letter-spacing: 8px;
+    margin-bottom: 24px;
+    opacity: 0.7;
+  }
+
+  .title {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: clamp(54px, 14vw, 88px);
+    line-height: 0.95;
+    color: var(--cream);
+    margin-bottom: 8px;
+    letter-spacing: -2px;
+  }
+  .title em {
+    font-style: italic;
+    font-weight: 400;
+    color: var(--rose);
+    display: block;
+  }
+
+  .subtitle {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--cream-dim);
+    margin-top: 18px;
+    margin-bottom: 36px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+
+  .levels-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .level-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 18px;
+    background: rgba(245, 230, 216, 0.04);
+    border: 1px solid rgba(245, 230, 216, 0.1);
+    border-radius: 4px;
+  }
+  .level-num {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 26px;
+    color: var(--gold);
+    min-width: 32px;
+  }
+  .level-label {
+    font-family: 'Fraunces', serif;
+    font-size: 15px;
+    color: var(--cream);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .level-desc {
+    font-size: 12px;
+    color: var(--cream-dim);
+    line-height: 1.4;
+  }
+
+  /* Indicador de progresso do baralho */
+  .deck-status {
+    margin-bottom: 30px;
+    padding: 14px 20px;
+    background: rgba(232, 176, 74, 0.08);
+    border: 1px solid rgba(232, 176, 74, 0.2);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .deck-status-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .deck-status-text {
+    font-family: 'Fraunces', serif;
+    font-size: 14px;
+    color: var(--cream-dim);
+    line-height: 1.5;
+  }
+  .deck-status-text strong {
+    color: var(--cream);
+    font-weight: 500;
+  }
+
+  .btn {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 18px 48px;
+    background: var(--rose);
+    color: var(--cream);
+    border: none;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 20px rgba(212, 80, 107, 0.3);
+    font-weight: 400;
+  }
+  .btn:hover {
+    background: var(--rose-deep);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212, 80, 107, 0.4);
+  }
+  .btn:active { transform: translateY(0); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--cream-dim);
+    border: 1px solid rgba(245, 230, 216, 0.2);
+    box-shadow: none;
+    padding: 12px 28px;
+    font-size: 12px;
+    margin-top: 14px;
+  }
+  .btn-ghost:hover {
+    background: rgba(245, 230, 216, 0.05);
+    color: var(--cream);
+    box-shadow: none;
+  }
+
+  .game-screen {
+    height: 100vh;
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 24px 0;
+  }
+  .game-screen.active {
+    display: flex;
+  }
+
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .level-indicator {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .level-tag {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .level-name {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--cream);
+  }
+
+  .progress-dots {
+    display: flex;
+    gap: 4px;
+  }
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(245, 230, 216, 0.2);
+    transition: all 0.3s;
+  }
+  .dot.active {
+    background: var(--gold);
+    width: 18px;
+    border-radius: 3px;
+  }
+
+  .card-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1500px;
+    margin: 20px 0;
+  }
+
+  .card {
+    width: 100%;
+    aspect-ratio: 5/7;
+    max-height: 60vh;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 14px;
+    padding: 32px 28px;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+      0 20px 50px var(--shadow),
+      0 0 0 1px rgba(232, 176, 74, 0.2) inset;
+    overflow: hidden;
+  }
+
+  .card-back {
+    background:
+      radial-gradient(circle at 30% 20%, rgba(212, 80, 107, 0.3) 0%, transparent 50%),
+      radial-gradient(circle at 70% 80%, rgba(232, 176, 74, 0.2) 0%, transparent 50%),
+      linear-gradient(135deg, var(--bg-mid) 0%, var(--plum) 100%);
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .card-back-frame {
+    border: 1px solid rgba(232, 176, 74, 0.4);
+    width: 90%;
+    height: 92%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+  }
+  .card-back-frame::before,
+  .card-back-frame::after {
+    content: '';
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 1px solid rgba(232, 176, 74, 0.4);
+  }
+  .card-back-frame::before {
+    top: -1px; left: -1px;
+    border-right: none;
+    border-bottom: none;
+  }
+  .card-back-frame::after {
+    bottom: -1px; right: -1px;
+    border-left: none;
+    border-top: none;
+  }
+  .card-back-symbol {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 80px;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+  .card-back-text {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--cream-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+  .card-front {
+    transform: rotateY(180deg);
+    background:
+      linear-gradient(180deg, #f8ecdb 0%, #f0dcc4 100%);
+    color: var(--bg-deep);
+  }
+
+  .card-front-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .card-level {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--rose-deep);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .card-number {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--gold-soft);
+  }
+
+  .card-question {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .card-question p {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: clamp(20px, 5vw, 26px);
+    line-height: 1.35;
+    color: var(--bg-deep);
+    letter-spacing: -0.3px;
+  }
+
+  .card-front-footer {
+    text-align: center;
+    border-top: 1px solid rgba(107, 58, 82, 0.2);
+    padding-top: 16px;
+  }
+  .card-front-footer span {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: var(--plum);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .card-front.wildcard {
+    background:
+      linear-gradient(135deg, var(--rose) 0%, var(--rose-deep) 100%);
+    color: var(--cream);
+  }
+  .card-front.wildcard .card-level {
+    color: var(--gold);
+  }
+  .card-front.wildcard .card-number {
+    color: rgba(245, 230, 216, 0.7);
+  }
+  .card-front.wildcard .card-question p {
+    color: var(--cream);
+  }
+  .card-front.wildcard .card-front-footer {
+    border-top-color: rgba(245, 230, 216, 0.25);
+  }
+  .card-front.wildcard .card-front-footer span {
+    color: rgba(245, 230, 216, 0.7);
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  .btn-next {
+    width: 100%;
+    max-width: 320px;
+  }
+  .btn-tap-hint {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 13px;
+    color: var(--cream-dim);
+    letter-spacing: 1px;
+    text-align: center;
+    height: 16px;
+    transition: opacity 0.3s;
+  }
+  .menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--cream-dim);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 8px 12px;
+    font-family: 'Inter', sans-serif;
+    transition: color 0.3s;
+  }
+  .menu-btn:hover { color: var(--cream); }
+
+  .end-screen {
+    text-align: center;
+  }
+  .end-screen .title {
+    font-size: clamp(40px, 10vw, 60px);
+  }
+  .end-quote {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 17px;
+    color: var(--cream-dim);
+    line-height: 1.6;
+    margin: 24px 0 30px;
+    padding: 0 20px;
+  }
+  .end-stats {
+    background: rgba(232, 176, 74, 0.06);
+    border: 1px solid rgba(232, 176, 74, 0.18);
+    border-radius: 4px;
+    padding: 16px 20px;
+    margin: 0 0 30px;
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    color: var(--cream-dim);
+    line-height: 1.6;
+  }
+  .end-stats strong {
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  /* Modal de confirmação */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--bg-mid);
+    border: 1px solid rgba(232, 176, 74, 0.3);
+    border-radius: 8px;
+    padding: 32px 28px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 24px;
+    color: var(--cream);
+    margin-bottom: 12px;
+  }
+  .modal p {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--cream-dim);
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+  .modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .modal-buttons .btn {
+    padding: 14px 28px;
+    font-size: 13px;
+  }
+
+  @media (max-height: 760px) {
+    .card-back-symbol { font-size: 60px; }
+    .levels-preview { gap: 8px; margin-bottom: 20px; }
+    .level-item { padding: 9px 14px; }
+    .subtitle { margin-bottom: 24px; }
+    .deck-status { margin-bottom: 22px; padding: 10px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deco deco-1">&amp;</div>
+<div class="deco deco-2">∞</div>
+
+<div class="container">
+
+  <!-- TELA INICIAL -->
+  <div class="screen start-screen active" id="start-screen">
+    <div class="ornament">· · ·</div>
+    <h1 class="title">Mais <em>Perto</em></h1>
+    <p class="subtitle">Um jogo para se conhecerem<br>de um jeito que ninguém mais conhece.</p>
+
+    <div class="levels-preview">
+      <div class="level-item">
+        <div class="level-num">I</div>
+        <div>
+          <div class="level-label">Percepção</div>
+          <div class="level-desc">Como vocês se enxergam</div>
+        </div>
+      </div>
+      <div class="level-item">
+        <div class="level-num">II</div>
+        <div>
+          <div class="level-label">Conexão</div>
+          <div class="level-desc">O que mora por dentro</div>
+        </div>
+      </div>
+      <div class="level-item">
+        <div class="level-num">III</div>
+        <div>
+          <div class="level-label">Reflexão</div>
+          <div class="level-desc">O que vocês são juntos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="deck-status" id="deck-status">
+      <div class="deck-status-title">Seu baralho</div>
+      <div class="deck-status-text" id="deck-status-text">Carregando...</div>
+    </div>
+
+    <button class="btn" onclick="startGame()">Começar</button>
+    <br>
+    <button class="btn btn-ghost" onclick="showResetModal()">Resetar baralho</button>
+  </div>
+
+  <!-- TELA DE JOGO -->
+  <div class="screen game-screen" id="game-screen">
+    <div class="game-header">
+      <div class="level-indicator">
+        <span class="level-tag" id="level-tag">Nível I</span>
+        <span class="level-name" id="level-name">Percepção</span>
+      </div>
+      <div class="progress-dots" id="progress-dots"></div>
+    </div>
+
+    <div class="card-area">
+      <div class="card" id="card" onclick="flipCard()">
+        <div class="card-face card-back">
+          <div class="card-back-frame">
+            <div class="card-back-symbol">&amp;</div>
+            <div class="card-back-text">Toque para revelar</div>
+          </div>
+        </div>
+        <div class="card-face card-front" id="card-front">
+          <div class="card-front-header">
+            <span class="card-level" id="card-level">Percepção</span>
+            <span class="card-number" id="card-number">01</span>
+          </div>
+          <div class="card-question">
+            <p id="card-question">...</p>
+          </div>
+          <div class="card-front-footer">
+            <span>· responda devagar ·</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="btn-tap-hint" id="tap-hint">toque na carta para virar</div>
+      <button class="btn btn-next" id="next-btn" onclick="nextCard()" style="display:none;">Próxima carta</button>
+      <button class="menu-btn" onclick="goHome()">← Voltar ao início</button>
+    </div>
+  </div>
+
+  <!-- TELA FINAL -->
+  <div class="screen end-screen" id="end-screen">
+    <div class="ornament">· fim ·</div>
+    <h1 class="title">Até <em>aqui</em></h1>
+    <p class="end-quote">
+      "O amor não é só sobre se conhecer.<br>
+      É sobre continuar querendo conhecer."
+    </p>
+    <div class="end-stats" id="end-stats"></div>
+    <button class="btn" onclick="restartGame()">Jogar novamente</button>
+  </div>
+
+</div>
+
+<!-- Modal de reset -->
+<div class="modal-overlay" id="reset-modal">
+  <div class="modal">
+    <h3>Resetar baralho?</h3>
+    <p>Isso vai apagar a memória de quais perguntas já saíram. Todas voltam a estar disponíveis.</p>
+    <div class="modal-buttons">
+      <button class="btn btn-ghost" onclick="closeResetModal()">Cancelar</button>
+      <button class="btn" onclick="resetDeck()">Sim, resetar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================
+// REPOSITÓRIO DE PERGUNTAS
+// ============================
+
+const questions = {
+  level1: [
+    "Qual foi a primeira coisa que você notou em mim quando nos conhecemos?",
+    "Que apelido bobo combinaria comigo, mas você nunca teve coragem de me chamar?",
+    "Se tivesse que descrever meu jeito de rir em três palavras, quais seriam?",
+    "Que parte minha você acha mais bonita e raramente me elogia?",
+    "Qual música te lembra de mim quando toca por aí?",
+    "Que cheiro do mundo me representa pra você?",
+    "Se eu fosse uma estação do ano, qual seria? E por quê?",
+    "Que mania minha você acha graça por dentro mas nunca disse?",
+    "Em que momento do dia você acha que eu sou mais eu?",
+    "Que cor você acha que combina com a minha alma?",
+    "Se eu fosse um cômodo de uma casa, qual seria?",
+    "Qual foi a primeira vez que você pensou: 'essa pessoa é especial'?",
+    "Que filme ou personagem te lembra de mim?",
+    "Como você descreveria meu olhar para alguém que nunca me viu?",
+    "Que talento meu você acha que eu subestimo?",
+    "Se você precisasse me apresentar para um estranho em uma frase, qual seria?",
+    "Qual é o melhor presente que eu já te dei — mesmo que sem saber?",
+    "O que você ama no meu silêncio?",
+    "Que parte da minha rotina você acha mais charmosa?",
+    "Se nossa história até aqui fosse um livro, qual seria o título do primeiro capítulo?",
+    "Qual comida você comeria pra sempre se ela fosse 'eu' transformada em prato?",
+    "Que tipo de tempo (sol, chuva, neblina) tem a ver comigo?",
+    "Se eu fosse uma bebida, qual seria? E como me beberia?",
+    "Que sotaque ou jeito de falar você ama em mim?",
+    "Qual gesto pequeno meu você reparou e nunca me contou?",
+    "Que parte do meu corpo você acha mais subestimada por mim mesma?",
+    "Se eu fosse um animal, qual seria — e qual hábito desse bicho me define?",
+    "Qual roupa minha você acha que é a 'minha cara'?",
+    "Que palavra eu uso muito sem perceber?",
+    "Como você descreveria meu humor matinal pra alguém que nunca me viu acordar?",
+    "Que tipo de turista eu seria em uma cidade nova?",
+    "Se você abrisse minha mochila do dia, o que apostaria que tem dentro?",
+    "Que som meu você reconheceria de longe no meio de uma multidão?",
+    "Qual livro ou história tem o mesmo 'clima' que eu tenho?",
+    "Se eu fosse um móvel da sua casa, qual seria — e onde estaria?",
+    "Que tipo de dança combina com meu jeito de ser?",
+    "Qual gesto carinhoso meu te desarma sempre, mesmo depois de tantas vezes?",
+    "Se a gente entrasse num café juntos pela primeira vez hoje, o que você notaria primeiro?",
+    "Que cidade do mundo combina comigo — mesmo que eu nunca tenha ido?",
+    "Qual adjetivo as pessoas usam pra me descrever que você acha incompleto?",
+    "Se eu virasse um perfume, quais seriam minhas notas principais?",
+    "Que tipo de barulho de fundo me acalma, na sua opinião?",
+    "Qual época da minha vida você teria adorado conhecer pessoalmente?",
+    "Se eu fosse um quadro, em qual museu estaria pendurada?",
+    "Que parte minha você acha que envelhece bem?"
+  ],
+  level2: [
+    "Qual sonho seu eu não conheço completamente?",
+    "Qual foi a fase mais difícil da sua vida — e o que ficou de você depois dela?",
+    "Você se sente amada do jeito que precisa? O que poderia ser diferente?",
+    "Que parte da sua infância você gostaria de me mostrar pessoalmente?",
+    "Qual medo seu você ainda tem vergonha de admitir?",
+    "O que você acha que as pessoas mais entendem errado sobre você?",
+    "Existe alguma coisa que você ainda não me contou e gostaria de contar?",
+    "Quando você se sente mais sozinha, mesmo perto das pessoas?",
+    "Qual perda da sua vida ainda te visita às vezes?",
+    "Que conversa você gostaria de ter tido com alguém antes que fosse tarde?",
+    "O que você precisa ouvir mais vezes — de mim ou de qualquer pessoa?",
+    "Em que momento da sua vida você se sentiu mais orgulhosa de si mesma?",
+    "Qual história sua você sempre conta cortando uma parte importante?",
+    "O que te faz chorar de um jeito que ninguém vê?",
+    "Que parte de você está em construção agora?",
+    "Qual elogio te marcou pra sempre — e quem disse?",
+    "Existe alguma promessa que você fez a si mesma quando era mais nova e ainda tenta cumprir?",
+    "O que te faz sentir realmente segura?",
+    "Qual é a sua versão de 'lar' — não o lugar, mas o sentimento?",
+    "Que perdão você ainda não conseguiu se dar?",
+    "Quando você foi mais corajosa do que parecia?",
+    "O que você espera nunca esquecer da sua vida até hoje?",
+    "Qual conversa difícil você adia por medo de como vai me afetar?",
+    "Que parte de mim te lembra de alguém que você amou antes?",
+    "Qual versão sua de 5 anos atrás teria orgulho de quem você é hoje? E qual ficaria triste?",
+    "Que crença sobre si mesma você está tentando desaprender?",
+    "Quando foi a última vez que você se sentiu pequena de um jeito ruim?",
+    "Que momento da sua vida você gostaria de poder visitar como observadora?",
+    "Qual cicatriz invisível você carrega há mais tempo?",
+    "Que tipo de afeto faz mais falta no seu dia a dia?",
+    "Quando você sente que está sendo 'demais'? E quando se sente 'pouco'?",
+    "Qual palavra te define hoje — mas não te definia há dois anos?",
+    "Que conversa adolescente sua te marcou pra vida toda?",
+    "Quando você sentiu, pela primeira vez, que era responsável por si mesma?",
+    "Qual saudade você guarda de uma versão sua que não existe mais?",
+    "Que sonho você desistiu silenciosamente — e ainda dói às vezes?",
+    "Qual pessoa do seu passado moldou você sem saber?",
+    "Que parte de você gosta de ficar sozinha de um jeito que ninguém entende?",
+    "Quando foi a última vez que você sentiu inveja boa de alguém?",
+    "Qual decisão que você tomou parecia errada na hora e foi a mais certa?",
+    "O que você gostaria que sua mãe ou seu pai tivesse te ensinado e não ensinou?",
+    "Qual emoção você tem mais dificuldade em sentir até o fim?",
+    "Que tipo de fracasso você não admite para ninguém?",
+    "Quando você se sente mais conectada com o mundo?",
+    "Qual versão sua você queria que eu conhecesse melhor?",
+    "Que silêncio na sua família ainda pesa em você?",
+    "Quando você se sente mais bonita — e tem a ver com o espelho?",
+    "Qual amizade do passado você ainda tenta entender por que acabou?",
+    "O que você faz quando ninguém está olhando que te define mais do que tudo?",
+    "Qual herança emocional da sua família você quer interromper?",
+    "Quando você sentiu que cresceu de verdade — não em idade, em alma?",
+    "Qual história sua você nunca conseguiu contar inteira em voz alta?",
+    "Que tipo de amor você precisou aprender a aceitar?",
+    "O que te faz ter esperança em dias ruins?"
+  ],
+  level3: [
+    "Qual foi o momento exato em que você percebeu que estava apaixonada por mim?",
+    "O que você teme mais em nós — e o que você mais confia?",
+    "Que versão sua só existe quando estamos juntos?",
+    "Tem alguma coisa que você queria pedir de mim, mas tem medo de pedir?",
+    "Em que momento eu te decepcionei e você não disse nada?",
+    "Qual é a coisa mais bonita que eu já fiz por você sem perceber?",
+    "Quando você pensa em 'nós daqui a dez anos', o que aparece?",
+    "Que parte de mim você vê mudando — e como você se sente sobre isso?",
+    "O que você mais teme perder em mim com o tempo?",
+    "Qual silêncio nosso te incomoda? Qual te conforta?",
+    "Você sente que eu te conheço de verdade? Onde sim, onde não?",
+    "Que conversa nunca tivemos e você gostaria de ter agora?",
+    "Como você se sente comigo nos dias em que você não está bem com você mesma?",
+    "Qual é o nosso lugar — geográfico ou imaginário?",
+    "Que promessa nossa, mesmo nunca dita, você sente que existe?",
+    "O que mudou em mim desde que estamos juntos? E em você?",
+    "Em que eu te lembro de casa? Em que eu te lembro de aventura?",
+    "Se nosso amor tivesse uma trilha sonora, qual seria a primeira faixa?",
+    "Que coisa minha eu deveria me orgulhar mais — e que você enxerga melhor que eu?",
+    "Você se sente livre para ser difícil comigo?",
+    "Qual é a memória nossa que você guardaria primeiro se pudesse escolher?",
+    "Se eu pudesse te fazer uma única promessa hoje, qual você gostaria de ouvir?",
+    "Que parte de mim você ainda quer descobrir?",
+    "O que você quer me dizer agora que talvez nunca tenha dito do mesmo jeito?",
+    "Em que aspecto você sente que já viramos 'um time' de verdade?",
+    "Qual briga nossa você reaprendeu alguma coisa importante?",
+    "Que medo seu sobre relacionamento você sente que comigo está se curando?",
+    "Em que momento eu te fiz se sentir mais segura sendo você mesma?",
+    "Qual saudade você sente de mim mesmo quando estamos juntos?",
+    "O que você ainda guarda de orgulho meu pra contar pros outros?",
+    "Que ritual nosso, por menor que seja, você gostaria que nunca acabasse?",
+    "Em que você acha que a gente é parecido demais? E em que somos opostos demais?",
+    "Qual versão minha você acha que a gente ainda vai ser?",
+    "O que você acha que a gente faz juntos melhor do que sozinhos?",
+    "Que pergunta sobre nós você tem medo da resposta?",
+    "Qual brigá já passou que você ainda guarda alguma coisa por dentro?",
+    "Quando foi a última vez que você se apaixonou de novo por mim — e por que?",
+    "Que parte minha você acha que ninguém mais vai conhecer como você conhece?",
+    "Em que momento você sentiu que a gente atravessou alguma coisa importante juntos?",
+    "Qual nossa conversa banal você nunca esqueceu, sem nem saber por quê?",
+    "O que da nossa rotina você não trocaria por nenhum 'momento épico'?",
+    "Que coisa minha te irrita e te encanta ao mesmo tempo?",
+    "Como você queria que a gente se lembrasse desse ano daqui a dez?",
+    "Em que momento você sentiu que precisava de mim de um jeito que assustou um pouco?",
+    "Qual papel você acha que eu desempenho na sua vida que ninguém mais consegue?",
+    "Que coisa eu faço que te faz pensar 'ela me ama' sem precisar de palavras?",
+    "Qual história nossa você ama contar pros outros?",
+    "Em que parte de mim você confia de olhos fechados?",
+    "Qual lado meu você acha que eu escondo até demais — inclusive de mim?",
+    "Que sonho seu, no fundo, depende um pouco da gente continuar?",
+    "Quando você imagina sua melhor versão, eu apareço de algum jeito?",
+    "Qual cuidado meu com você ninguém mais teve do mesmo jeito?",
+    "O que você tem medo que o tempo faça com a gente — e o que você confia que o tempo vai fazer?",
+    "Qual coisa nossa só faz sentido entre a gente?",
+    "Em que momento você sentiu que era amada de um jeito novo?",
+    "Que tipo de futuro você não quer construir sozinha — quer comigo?"
+  ],
+  wildcards: [
+    "Olhe nos olhos um do outro por 30 segundos sem falar nada.",
+    "Diga três coisas pelas quais você é grata na pessoa à sua frente — agora.",
+    "Encostem as testas e fechem os olhos por um minuto. Depois, contem o que sentiram.",
+    "Escolha uma memória de vocês dois e descreva como se fosse uma cena de filme.",
+    "Mande uma mensagem agora dizendo algo que nunca disse antes — pode ser por áudio ou texto.",
+    "Segure a mão da pessoa enquanto responde a próxima pergunta.",
+    "Faça um elogio que você nunca fez antes.",
+    "Conte uma coisa que você fez hoje e nem te ocorreu compartilhar.",
+    "Beije onde a pessoa menos esperar — sem aviso.",
+    "Diga 'eu te amo' usando outras palavras.",
+    "Inverta os papéis: você responde como se fosse a outra pessoa por uma rodada.",
+    "Escolha uma música agora e dance um pouco juntos, mesmo que só dois minutos.",
+    "Conte um segredo pequeno — algo que você nunca contou para ninguém.",
+    "Olhe para a pessoa e termine a frase: 'eu te admiro porque...'",
+    "Faça uma pergunta que você sempre teve curiosidade — qualquer uma.",
+    "Façam uma foto agora, sem pose, do jeito que estão. Guardem.",
+    "Descreva a outra pessoa em três palavras que ninguém usaria.",
+    "Diga uma coisa que você ama em você mesma — e deixe a outra pessoa concordar ou discordar.",
+    "Façam silêncio por dois minutos juntos. Sem celular, sem nada.",
+    "Conte uma promessa silenciosa que você fez sobre essa relação.",
+    "Toque o rosto da pessoa devagar enquanto olha nos olhos dela.",
+    "Diga em voz alta: 'eu escolho você' — e termine a frase do seu jeito.",
+    "Cheire o pescoço da pessoa por alguns segundos.",
+    "Escreva agora, no celular, três palavras que descrevem como você se sente nesse momento. Mostre.",
+    "Façam um abraço de pelo menos um minuto inteiro, sem pressa.",
+    "Diga uma coisa que você tem medo de admitir que sente.",
+    "Conte qual foi o momento de hoje que você mais gostou — e por quê.",
+    "Olhem um para o outro e cada um diga: 'me desculpe por...'.",
+    "Termine a frase: 'se eu pudesse parar o tempo agora seria porque...'",
+    "Toque o cabelo da pessoa enquanto ela responde a próxima pergunta.",
+    "Diga o que você acha que a outra pessoa precisa ouvir hoje.",
+    "Conte uma vez em que você sentiu muito orgulho da outra pessoa, e ela não soube.",
+    "Olhem juntos por uma janela por um minuto, em silêncio. Depois compartilhem o que pensaram.",
+    "Diga uma coisa que você nunca quer que mude entre vocês.",
+    "Façam um pacto pequeno agora. Uma promessa boba que só vocês dois saberão."
+  ]
+};
+
+const levelConfig = {
+  1: { tag: "Nível I", name: "Percepção", count: 5, key: 'level1' },
+  2: { tag: "Nível II", name: "Conexão", count: 6, key: 'level2' },
+  3: { tag: "Nível III", name: "Reflexão", count: 7, key: 'level3' }
+};
+
+// ============================
+// MEMÓRIA PERSISTENTE
+// ============================
+
+const STORAGE_KEY = 'mais_perto_memory_v1';
+
+function loadMemory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return {
+    seen: { level1: [], level2: [], level3: [], wildcards: [] },
+    sessionsPlayed: 0
+  };
+}
+
+function saveMemory(mem) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mem));
+  } catch (e) {}
+}
+
+let memory = loadMemory();
+
+// ============================
+// SORTEIO COM MEMÓRIA
+// ============================
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// Sorteia N perguntas que ainda não foram vistas, ou recicla se necessário
+function drawQuestions(category, count) {
+  const all = questions[category];
+  const seen = new Set(memory.seen[category]);
+
+  // Perguntas ainda não vistas
+  let available = all.filter(q => !seen.has(q));
+
+  // Se não tem perguntas suficientes não-vistas, reseta esta categoria
+  if (available.length < count) {
+    memory.seen[category] = [];
+    available = [...all];
+  }
+
+  const drawn = shuffle(available).slice(0, count);
+
+  // Marcar como vistas
+  memory.seen[category].push(...drawn);
+  saveMemory(memory);
+
+  return drawn;
+}
+
+// ============================
+// STATUS DO BARALHO
+// ============================
+
+function updateDeckStatus() {
+  const total = questions.level1.length + questions.level2.length + questions.level3.length;
+  const seen = memory.seen.level1.length + memory.seen.level2.length + memory.seen.level3.length;
+  const remaining = total - seen;
+
+  const el = document.getElementById('deck-status-text');
+  if (memory.sessionsPlayed === 0) {
+    el.innerHTML = `<strong>${total} perguntas</strong> + <strong>${questions.wildcards.length} curingas</strong> esperando vocês.`;
+  } else {
+    el.innerHTML = `<strong>${remaining}</strong> perguntas novas · <strong>${seen}</strong> já vistas · <strong>${memory.sessionsPlayed}</strong> ${memory.sessionsPlayed === 1 ? 'partida jogada' : 'partidas jogadas'}`;
+  }
+}
+
+// ============================
+// LÓGICA DO JOGO
+// ============================
+
+let gameState = null;
+
+function startGame() {
+  gameState = {
+    currentLevel: 1,
+    cardIndex: 0,
+    cardsThisLevel: drawQuestions('level1', levelConfig[1].count),
+    isFlipped: false,
+    showWildcardNext: false,
+    sessionWildcards: drawQuestions('wildcards', 2)  // 2 curingas por partida (entre níveis)
+  };
+
+  memory.sessionsPlayed += 1;
+  saveMemory(memory);
+
+  updateHeader();
+  updateDots();
+  showScreen('game-screen');
+  showCard();
+}
+
+function updateHeader() {
+  const cfg = levelConfig[gameState.currentLevel];
+  document.getElementById('level-tag').textContent = cfg.tag;
+  document.getElementById('level-name').textContent = cfg.name;
+}
+
+function updateDots() {
+  const total = levelConfig[gameState.currentLevel].count;
+  const dotsEl = document.getElementById('progress-dots');
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i <= gameState.cardIndex ? ' active' : '');
+    dotsEl.appendChild(d);
+  }
+}
+
+function showCard() {
+  const card = document.getElementById('card');
+  card.classList.remove('flipped');
+  gameState.isFlipped = false;
+
+  document.getElementById('next-btn').style.display = 'none';
+  document.getElementById('tap-hint').style.opacity = '1';
+
+  const cardFront = document.getElementById('card-front');
+
+  if (gameState.showWildcardNext) {
+    const wildIdx = gameState.currentLevel - 2; // 0 entre nível 1-2, 1 entre nível 2-3
+    const wild = gameState.sessionWildcards[wildIdx];
+    cardFront.classList.add('wildcard');
+    document.getElementById('card-level').textContent = 'Curinga';
+    document.getElementById('card-number').textContent = '✦';
+    document.getElementById('card-question').textContent = wild;
+  } else {
+    cardFront.classList.remove('wildcard');
+    const cfg = levelConfig[gameState.currentLevel];
+    const q = gameState.cardsThisLevel[gameState.cardIndex];
+    document.getElementById('card-level').textContent = cfg.name;
+    document.getElementById('card-number').textContent = String(gameState.cardIndex + 1).padStart(2, '0');
+    document.getElementById('card-question').textContent = q;
+  }
+}
+
+function flipCard() {
+  if (gameState.isFlipped) return;
+  const card = document.getElementById('card');
+  card.classList.add('flipped');
+  gameState.isFlipped = true;
+  document.getElementById('tap-hint').style.opacity = '0';
+  setTimeout(() => {
+    document.getElementById('next-btn').style.display = 'inline-block';
+  }, 400);
+}
+
+function nextCard() {
+  // Se acabou de mostrar curinga, vai pro próximo nível
+  if (gameState.showWildcardNext) {
+    gameState.showWildcardNext = false;
+    const nextLevel = gameState.currentLevel;
+    gameState.cardsThisLevel = drawQuestions(levelConfig[nextLevel].key, levelConfig[nextLevel].count);
+    gameState.cardIndex = 0;
+    updateHeader();
+    updateDots();
+    showCard();
+    return;
+  }
+
+  gameState.cardIndex++;
+  const total = levelConfig[gameState.currentLevel].count;
+
+  if (gameState.cardIndex >= total) {
+    // Fim do nível atual
+    if (gameState.currentLevel < 3) {
+      gameState.currentLevel++;
+      gameState.showWildcardNext = true;
+      // Atualiza o header já apontando o próximo nível (quando virar a carta de pergunta)
+      updateHeader();
+      updateDots();
+      showCard();
+    } else {
+      // Fim da partida
+      showEndScreen();
+    }
+  } else {
+    updateDots();
+    showCard();
+  }
+}
+
+function showEndScreen() {
+  const total = questions.level1.length + questions.level2.length + questions.level3.length;
+  const seen = memory.seen.level1.length + memory.seen.level2.length + memory.seen.level3.length;
+  const remaining = total - seen;
+
+  let statsText;
+  if (remaining === 0) {
+    statsText = `<strong>Vocês exploraram todas as perguntas do baralho.</strong><br>Que tal resetar e recomeçar essa jornada?`;
+  } else {
+    statsText = `<strong>${remaining}</strong> perguntas novas ainda esperam por vocês.<br><strong>${memory.sessionsPlayed}</strong> ${memory.sessionsPlayed === 1 ? 'partida' : 'partidas'} até aqui.`;
+  }
+  document.getElementById('end-stats').innerHTML = statsText;
+
+  showScreen('end-screen');
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function restartGame() {
+  updateDeckStatus();
+  showScreen('start-screen');
+}
+
+function goHome() {
+  if (confirm('Voltar ao início? A partida atual será encerrada.')) {
+    updateDeckStatus();
+    showScreen('start-screen');
+  }
+}
+
+// ============================
+// MODAL DE RESET
+// ============================
+
+function showResetModal() {
+  document.getElementById('reset-modal').classList.add('active');
+}
+function closeResetModal() {
+  document.getElementById('reset-modal').classList.remove('active');
+}
+function resetDeck() {
+  memory = {
+    seen: { level1: [], level2: [], level3: [], wildcards: [] },
+    sessionsPlayed: 0
+  };
+  saveMemory(memory);
+  updateDeckStatus();
+  closeResetModal();
+}
+
+// Inicialização
+updateDeckStatus();
+</script>
+</body>
+</html>
